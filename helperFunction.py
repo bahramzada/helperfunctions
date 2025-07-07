@@ -10,3 +10,31 @@ def unzipFile(file_path, target_folder):
     return "Unzip Completed"
 
 
+import torch
+from torchvision import datasets, transforms
+from torch.utils.data import DataLoader
+import numpy as np
+
+def calculateMeanStd(data_dir, batch_size=32, num_workers=2):
+    transform = transforms.Compose([
+        transforms.ToTensor()
+    ])
+    dataset = datasets.ImageFolder(data_dir, transform=transform)
+    loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    
+    mean = 0.
+    std = 0.
+    total_images_count = 0
+
+    for images, _ in loader:
+        batch_samples = images.size(0)  
+        images = images.view(batch_samples, images.size(1), -1)  # (B, C, H*W)
+        mean += images.mean(2).sum(0)
+        std += images.std(2).sum(0)
+        total_images_count += batch_samples
+
+    mean /= total_images_count
+    std /= total_images_count
+
+    return mean.numpy(), std.numpy()
+
