@@ -19,7 +19,7 @@ import torch
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 
-def calculate_mean_std(data_dir, batch_size=32, num_workers=2, image_size=(224, 224)):
+def calculateMeanStd(data_dir, batch_size=32, num_workers=2, image_size=(224, 224)):
     """
     Diskdə yerləşən şəkil datasetinin (ImageFolder strukturu) orta (mean) və standart sapma (std) dəyərlərini hesablayır.
     
@@ -71,28 +71,32 @@ from tqdm import tqdm
 
 def calculateMeanStdHF(hf_dataset):
     """
-    Hugging Face image dataset-inin mean və std (RGB kanalları üzrə) dəyərlərini hesablayır.
+    Hugging Face dataset-indəki bütün şəkilləri RGB-yə çevirərək
+    RGB kanallar üzrə orta (mean) və standart sapma (std) hesablayır.
 
     Args:
-        hf_dataset: Hugging Face dataset (məsələn, ds["train"])
+        hf_dataset: Hugging Face dataset obyektidir (məs: ds["train"])
 
     Returns:
-        mean: np.ndarray (3,) - RGB üçün orta dəyərlər
-        std:  np.ndarray (3,) - RGB üçün standart sapma
+        mean: np.ndarray, RGB üçün orta dəyərlər (shape: [3])
+        std: np.ndarray, RGB üçün std dəyərlər (shape: [3])
     """
-    transform = transforms.ToTensor()
+    to_tensor = transforms.ToTensor()
     n_images = len(hf_dataset)
     mean = np.zeros(3)
     std = np.zeros(3)
+    rgb_count = 0
 
     for i in tqdm(range(n_images)):
         img = hf_dataset[i]['image']
-        img = transform(img)  # [C, H, W]
+        img = img.convert("RGB")  # Bütün şəkilləri RGB-yə çeviririk
+        img = to_tensor(img)      # [C, H, W] formatına salırıq
         mean += img.mean(dim=(1, 2)).numpy()
         std += img.std(dim=(1, 2)).numpy()
+        rgb_count += 1
 
-    mean /= n_images
-    std /= n_images
+    mean /= rgb_count
+    std /= rgb_count
 
     return mean, std
 
